@@ -1,0 +1,179 @@
+{
+  "name": "Daily Remarks - WF - AI PM",
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1BTRP2n4SMkYxO0Lncn6NKHJuYflkWiYYb7lEy55kQ8E",
+          "mode": "list",
+          "cachedResultName": "followUP",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BTRP2n4SMkYxO0Lncn6NKHJuYflkWiYYb7lEy55kQ8E/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BTRP2n4SMkYxO0Lncn6NKHJuYflkWiYYb7lEy55kQ8E/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "date",
+              "lookupValue": "={{ new Date().toISOString().split('T')[0] }}"
+            },
+            {
+              "lookupColumn": "contextType",
+              "lookupValue": "active"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Get Today's Active Tasks",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        272,
+        0
+      ],
+      "id": "b1bcc3bd-d44d-4091-985f-31ead40b63d0"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\n// Handle both cases (data array OR direct rows)\nlet rows = [];\n\nif (items[0].json.data) {\n  rows = items[0].json.data;\n} else {\n  rows = items.map(item => item.json);\n}\n\nconst today = new Date().toISOString().split('T')[0];\n\nconst toRemind = rows.filter(r => \n  r.date === today &&\n  r.contextType === 'active' &&\n  r.reminderSent !== true &&\n  r.reminderSent !== 'true'\n);\n\nif (toRemind.length === 0) {\n  return [{ json: { noTasks: true, message: 'No pending reminders for today' }}];\n}\n\nreturn toRemind.map(row => ({\n  json: {\n    slackUserId: row.slackUserId || '',\n    userName: row.userName || '',\n    originalText: row.originalText || '',   // ✅ Yeh line add ki\n    taskDescription: row.taskDescription || '',\n    date: row.date || ''\n  }\n}));"
+      },
+      "name": "Prepare Reminders",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ],
+      "id": "974edd61-97e7-4cb3-a9f3-1dfe44d938db"
+    },
+    {
+      "parameters": {
+        "select": "user",
+        "user": {
+          "__rl": true,
+          "value": "={{ $json.slackUserId }}",
+          "mode": "id"
+        },
+        "text": "=Assalam-o-Alaikum *{{ $json.userName }}! \n\nToday task :\n{{ $json.originalText }}\n\nHave you completed this task?",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "name": "Send Reminder DM",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        688,
+        0
+      ],
+      "id": "cc30a349-719f-4d19-90e2-43b14f36b327",
+      "webhookId": "386e2dcc-3872-4ec8-a1fc-bd4dff6bcb55"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Node: \"Store Reminder Info\"\n// Position: After \"Send Reminder DM\"\n\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.pendingReminders) staticData.pendingReminders = {};\n\nconst reminderData = $input.first().json;\n\n// Google Sheets se row number lena hoga - iske liye pehle sheet query karni hogi\n// Ya phir aap row number \"Prepare Reminders\" node mein pass kar sakte ho\n\nconst today = new Date().toISOString().split('T')[0];\n\nif (!staticData.pendingReminders[today]) {\n  staticData.pendingReminders[today] = [];\n}\n\n// Slack response se thread_ts nikalo (yeh critical hai!)\n// Slack node ka output mein ts hota hai\nconst slackResponse = $input.first().json;\nconst threadTs = slackResponse.ts || '';\n\nstaticData.pendingReminders[today].push({\n  userId: reminderData.userId,\n  userName: reminderData.userName,\n  taskDescription: reminderData.taskDescription,\n  sheetRowIndex: reminderData.sheetRowIndex,\n  reminderThreadTs: threadTs,  // ← Yeh reply match karne ke liye\n  reminderSent: true,\n  status: 'pending'\n});\n\nreturn [{ json: { stored: true, threadTs: threadTs } }];"
+      },
+      "name": "Save Reminder Info",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        0
+      ],
+      "id": "c0ee39b0-9318-4368-96c8-cb8edc71d24b"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 10,
+              "triggerAtMinute": 30
+            }
+          ]
+        }
+      },
+      "id": "d2cebdfb-385e-4a43-8a33-71e91ace1ed0",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get Today's Active Tasks": {
+      "main": [
+        [
+          {
+            "node": "Prepare Reminders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Reminder DM": {
+      "main": [
+        [
+          {
+            "node": "Save Reminder Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Today's Active Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "5be62ac1-279f-4eb7-80ec-0738db498e0f",
+  "meta": {
+    "instanceId": "e215f34dafd463941da2254340542ce78540b09ffe78c11c8e9bcca3bbf402ea"
+  },
+  "id": "cPNYSBin71Y2lebO",
+  "tags": [
+    {
+      "name": "Scheduler",
+      "id": "6aavTIlG0UAtUZWy",
+      "updatedAt": "2026-04-09T13:49:06.200Z",
+      "createdAt": "2026-04-09T13:49:06.200Z"
+    },
+    {
+      "updatedAt": "2026-04-09T08:05:27.961Z",
+      "createdAt": "2026-04-09T08:05:27.961Z",
+      "id": "BQvZI5OIn1RaC6yC",
+      "name": "Google Sheets"
+    },
+    {
+      "name": "Slack",
+      "id": "YOdmb8IOAoPQ5Z2y",
+      "updatedAt": "2026-04-09T13:48:53.844Z",
+      "createdAt": "2026-04-09T13:48:53.844Z"
+    }
+  ]
+}
