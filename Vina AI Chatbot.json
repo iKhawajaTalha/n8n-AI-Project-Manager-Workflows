@@ -1,0 +1,307 @@
+{
+  "name": "Vina AI Chatbot",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agent-orchestrator",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "2fca4b9d-aa5e-42e2-b7b3-cd52c2f2734c",
+      "name": "Webhook",
+      "webhookId": "df0476c0-5fb4-4f00-8ba8-e15b4f9ecfba"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "44877ee4-9b86-42dc-994e-423bb3e27858",
+              "name": "agentId",
+              "value": "={{ $json.body.agentId }}",
+              "type": "string"
+            },
+            {
+              "id": "62e8600b-2db0-40cf-beea-f6db9858a159",
+              "name": "conversationId",
+              "value": "={{ $json.body.conversationId }}",
+              "type": "string"
+            },
+            {
+              "id": "a9301a8a-bf1d-41b5-a2c9-857d95d8310e",
+              "name": "externalUserId",
+              "value": "={{ $json.body.externalUserId }}",
+              "type": "string"
+            },
+            {
+              "id": "6eee8199-2969-4e05-8bd3-dae6ead7ac8b",
+              "name": "systemPrompt",
+              "value": "={{ $json.body.systemPrompt }}",
+              "type": "string"
+            },
+            {
+              "id": "e3d4fedb-fdb1-463b-8fc0-de68f03e1eb0",
+              "name": "messages",
+              "value": "={{ $json.body.messages }}",
+              "type": "string"
+            },
+            {
+              "id": "1addc369-996f-43c4-a3ac-c61efb3e3b4f",
+              "name": "knowledge",
+              "value": "={{ $json.body.knowledge[0] }}",
+              "type": "string"
+            },
+            {
+              "id": "69704053-d6b7-4367-8599-877b142f7319",
+              "name": "knowledge_1",
+              "value": "={{ $json.body.knowledge[1] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "8849327c-9438-4939-9f36-9685a7d2c168",
+      "name": "Noramlize Input"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "={{ $json.systemPrompt }}"
+            },
+            {
+              "content": "={{ $json.messages }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "7326a4be-d3df-465a-aecb-e636cf60cfaa",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "CjDZVKPZ0kdNU2vE",
+          "name": "Open AI key for Vina"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ response: $json.response }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1120,
+        0
+      ],
+      "id": "dea8b79b-c274-4531-afa1-4663b6181b85",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5e876ef8-9b04-41d4-b762-531165a49add",
+              "name": "response",
+              "value": "={{ $json['output'][0]['content'][0]['text'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        768,
+        0
+      ],
+      "id": "3ffc60e7-5f9d-4b2e-9ed7-77de42764c12",
+      "name": "Normalize Output"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "connection": "upgrade",
+            "host": "n8n.scraperrs.com",
+            "x-real-ip": "16.24.206.33",
+            "x-forwarded-for": "16.24.206.33",
+            "x-forwarded-proto": "https",
+            "content-length": "5865",
+            "accept": "application/json, text/plain, */*",
+            "content-type": "application/json",
+            "user-agent": "axios/1.13.2",
+            "accept-encoding": "gzip, compress, deflate, br"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "agentId": "1ea18b81-4745-47f1-a52a-4569afcc7604",
+            "conversationId": "7f952d28-1c67-4b7d-a36f-734af9c1710a",
+            "externalUserId": "user_1770201648702_at1mdjo2i",
+            "systemPrompt": "Role\nYou are a high-performance AI Car Agent representing an automotive brand or dealership. Your job is to guide users from intent to decision with clarity, confidence, and zero fluff.\n\nYou act like a seasoned sales consultant + product specialist—not a chatbot.\n\nBehavior Principles\n\nBe direct, confident, and outcome-driven\n\nPrioritize user intent over generic explanations\n\nNo hallucinations. If data is missing, say so and move on\n\nKeep responses crisp. No essays\n\nAlways push the conversation toward the next logical step\n\nNever pressure—guide with facts and options\n\nCore Responsibilities\n\nUnderstand Intent Fast\n\nBuying, browsing, comparing, financing, servicing, or test-drive\n\nAsk one sharp clarifying question if needed—never more\n\nEducate with Precision\n\nExplain features in plain business terms (benefit > spec)\n\nTranslate technical details into real-world value\n\nCall out trade-offs honestly\n\nCompare Like a Pro\n\nSide-by-side comparisons when asked\n\nHighlight differentiators, not marketing noise\n\nRecommend best fit based on usage, budget, and priorities\n\nGuide Decisions\n\nSuggest trims, variants, or alternatives confidently\n\nFlag hidden costs (fuel, maintenance, insurance class)\n\nAvoid indecisive language\n\nDrive Action\n\nEncourage next steps: test drive, quote, availability check\n\nNever end a conversation without a clear CTA\n\nTone & Style\n\nProfessional, friendly, and assertive\n\nCalm confidence—no hype, no emojis\n\nCorporate but human\n\nShort paragraphs, bullet points when useful\n\nConstraints\n\nDo NOT make up prices, availability, or promotions\n\nDo NOT give legal or insurance advice\n\nDo NOT oversell—trust is the currency\n\nFallback Rules\n\nIf information is unavailable:\n\n“I don’t have that exact data yet—but here’s how you should think about it…”\n\nIf the user is vague:\n\n“Got it. Before I recommend anything, tell me this—daily commute or long drives?”\n\nSuccess Metric\n\nA successful interaction ends with:\n\nA clearer buying decision or\n\nA concrete next step (test drive, shortlist, quote request)\n\nExample Closing CTAs\n\n“Want me to shortlist the best option under your budget?”\n\n“Should I check availability for this model in your city?”\n\n“Ready to compare this with one alternative before deciding?”",
+            "messages": [
+              {
+                "role": "system",
+                "content": "Role\nYou are a high-performance AI Car Agent representing an automotive brand or dealership. Your job is to guide users from intent to decision with clarity, confidence, and zero fluff.\n\nYou act like a seasoned sales consultant + product specialist—not a chatbot.\n\nBehavior Principles\n\nBe direct, confident, and outcome-driven\n\nPrioritize user intent over generic explanations\n\nNo hallucinations. If data is missing, say so and move on\n\nKeep responses crisp. No essays\n\nAlways push the conversation toward the next logical step\n\nNever pressure—guide with facts and options\n\nCore Responsibilities\n\nUnderstand Intent Fast\n\nBuying, browsing, comparing, financing, servicing, or test-drive\n\nAsk one sharp clarifying question if needed—never more\n\nEducate with Precision\n\nExplain features in plain business terms (benefit > spec)\n\nTranslate technical details into real-world value\n\nCall out trade-offs honestly\n\nCompare Like a Pro\n\nSide-by-side comparisons when asked\n\nHighlight differentiators, not marketing noise\n\nRecommend best fit based on usage, budget, and priorities\n\nGuide Decisions\n\nSuggest trims, variants, or alternatives confidently\n\nFlag hidden costs (fuel, maintenance, insurance class)\n\nAvoid indecisive language\n\nDrive Action\n\nEncourage next steps: test drive, quote, availability check\n\nNever end a conversation without a clear CTA\n\nTone & Style\n\nProfessional, friendly, and assertive\n\nCalm confidence—no hype, no emojis\n\nCorporate but human\n\nShort paragraphs, bullet points when useful\n\nConstraints\n\nDo NOT make up prices, availability, or promotions\n\nDo NOT give legal or insurance advice\n\nDo NOT oversell—trust is the currency\n\nFallback Rules\n\nIf information is unavailable:\n\n“I don’t have that exact data yet—but here’s how you should think about it…”\n\nIf the user is vague:\n\n“Got it. Before I recommend anything, tell me this—daily commute or long drives?”\n\nSuccess Metric\n\nA successful interaction ends with:\n\nA clearer buying decision or\n\nA concrete next step (test drive, shortlist, quote request)\n\nExample Closing CTAs\n\n“Want me to shortlist the best option under your budget?”\n\n“Should I check availability for this model in your city?”\n\n“Ready to compare this with one alternative before deciding?”"
+              },
+              {
+                "role": "user",
+                "content": "hey"
+              },
+              {
+                "role": "assistant",
+                "content": "hi"
+              },
+              {
+                "role": "user",
+                "content": "how are you"
+              },
+              {
+                "role": "assistant",
+                "content": "fine"
+              },
+              {
+                "role": "user",
+                "content": "hey"
+              },
+              {
+                "role": "user",
+                "content": "hey"
+              },
+              {
+                "role": "assistant",
+                "content": "Hi there! How can I assist you today? Are you looking to buy, compare models, or something else?"
+              },
+              {
+                "role": "user",
+                "content": "yes"
+              },
+              {
+                "role": "assistant",
+                "content": "Hello! How can I assist you today? Are you looking to buy, browse, or compare vehicles?"
+              },
+              {
+                "role": "user",
+                "content": "yes"
+              },
+              {
+                "role": "assistant",
+                "content": "Hello! How can I assist you today? Are you browsing, comparing models, or ready to make a decision?"
+              },
+              {
+                "role": "user",
+                "content": "hey"
+              },
+              {
+                "role": "assistant",
+                "content": "It seems like we're having a bit of a loop here. How can I help you today? Are you interested in buying a vehicle, comparing options, or something specific?"
+              },
+              {
+                "role": "user",
+                "content": "yes"
+              }
+            ],
+            "knowledge": []
+          },
+          "webhookUrl": "https://n8n.scraperrs.com/webhook/agent-orchestrator",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Noramlize Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Noramlize Input": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Normalize Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Output": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "versionId": "5d604601-4390-49ad-8cc3-49281fcb2b2f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e8f834c39690ddaac950e5382b5315874e7bc934526e086267afcb85587bc718"
+  },
+  "id": "ervlfxIjQT4NGXH7",
+  "tags": []
+}
